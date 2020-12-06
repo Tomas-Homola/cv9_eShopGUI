@@ -1,6 +1,6 @@
 #include "eShopGUI.h"
 
-void eShopGUI::loadProducts()
+void eShopGUI::importProducts()
 {
     QString fileName = QFileDialog::getOpenFileName(this, "Open File", "", tr("Txt File (*.txt);;All files (*.)"));
 
@@ -19,9 +19,6 @@ void eShopGUI::loadProducts()
             return;
 
         QTextStream fromFile(&file);
-
-        numOfAllProducts = fromFile.readLine().toInt();
-        qDebug() << "pocet produktov:\n" << numOfAllProducts;
 
         int tempID = -1;
         QString tempName = "";
@@ -46,36 +43,47 @@ void eShopGUI::loadProducts()
             qDebug() << "products loaded";
         }
 
-        for (int i = 0; i < numOfAllProducts; i++)
-        {
-            qDebug() << allProducts[i].getID() << allProducts[i].getName() << allProducts[i].getProducer() << allProducts[i].getQuantity() << allProducts[i].getPrice() << " EUR";
-        }
-
-        ui.tableWidget->setRowCount(allProducts.size());
-
-        for (int i = 0; i < allProducts.size(); i++)
-        {
-            QTableWidgetItem* ID = new QTableWidgetItem();
-            QTableWidgetItem* name = new QTableWidgetItem();
-            QTableWidgetItem* producer = new QTableWidgetItem();
-            QTableWidgetItem* quantity = new QTableWidgetItem();
-            QTableWidgetItem* price = new QTableWidgetItem();
-
-            ID->setText(QString("%1").arg(allProducts[i].getID()));
-            name->setText(allProducts[i].getName());
-            producer->setText(allProducts[i].getProducer());
-            quantity->setText(QString("%1").arg(allProducts[i].getQuantity()));
-            price->setText(QString("%1 EUR").arg(allProducts[i].getPrice()));
-
-            ui.tableWidget->setItem(i, 0, ID);
-            ui.tableWidget->setItem(i, 1, name);
-            ui.tableWidget->setItem(i, 2, producer);
-            ui.tableWidget->setItem(i, 3, quantity);
-            ui.tableWidget->setItem(i, 4, price);
-        }
-
+        qDebug() << "Num of products:" << allProducts.size();
     }
 }
+
+void eShopGUI::showProducts(QVector<Product>& products)
+{
+    ui.tableWidget_Catalog->clear();
+
+    ui.tableWidget_Catalog->setRowCount(products.size());
+
+    for (int i = 0; i < products.size(); i++)
+    {
+        QTableWidgetItem* ID = new QTableWidgetItem();
+        QTableWidgetItem* name = new QTableWidgetItem();
+        QTableWidgetItem* producer = new QTableWidgetItem();
+        QTableWidgetItem* quantity = new QTableWidgetItem();
+        QTableWidgetItem* price = new QTableWidgetItem();
+
+        ID->setText(QString("%1").arg(products[i].getID()));
+        name->setText(products[i].getName());
+        producer->setText(products[i].getProducer());
+        quantity->setText(QString("%1").arg(products[i].getQuantity()));
+        price->setText(QString("%1 EUR").arg(products[i].getPrice()));
+
+        ui.tableWidget_Catalog->setItem(i, 0, ID);
+        ui.tableWidget_Catalog->setItem(i, 1, name);
+        ui.tableWidget_Catalog->setItem(i, 2, producer);
+        ui.tableWidget_Catalog->setItem(i, 3, quantity);
+        ui.tableWidget_Catalog->setItem(i, 4, price);
+    }
+}
+
+void eShopGUI::print(QVector<Product>& products)
+{
+    for (int i = 0; i < products.size(); i++)
+    {
+        qDebug() << products[i].getID() << products[i].getName() << products[i].getProducer() << products[i].getQuantity() << products[i].getPrice();
+    }
+}
+
+//#################### PO SPUSTENI ####################//
 
 eShopGUI::eShopGUI(QWidget *parent)
     : QMainWindow(parent)
@@ -86,12 +94,12 @@ eShopGUI::eShopGUI(QWidget *parent)
 
     ui.groupBox_RegistrationWindow->setVisible(false);
     ui.groupBox_ShowProducts->setEnabled(false);
+    ui.groupBox_Buttom->setEnabled(false);
     ui.label_CustomerInfo->setVisible(false);
     ui.doubleSpinBox_ShowBudget->setVisible(false);
     ui.label_EUR->setVisible(false);
     ui.button_FinnishOrder->setVisible(false);
     ui.inputBox_SearchedItem->setEnabled(false);
-    ui.button_Search->setEnabled(false);
     ui.button_CustomerRegistration->setEnabled(false);
 
     msgBox.setWindowTitle("Info message");
@@ -101,80 +109,33 @@ eShopGUI::eShopGUI(QWidget *parent)
 
 void eShopGUI::on_action_ImportProducts_triggered()
 {
-    QString fileName = QFileDialog::getOpenFileName(this, "Open File", "", tr("Txt File (*.txt);;All files (*.)"));
+    importProducts();
 
-    if (fileName.isEmpty())
-        return;
+    ui.button_CustomerRegistration->setEnabled(true);
 
-    qDebug() << fileName;
+    showProducts(allProducts);
+}
 
-    QFileInfo fileInfo(fileName);
-    qDebug() << fileInfo.fileName();
+void eShopGUI::on_inputBox_SearchedItem_textChanged()
+{
+    foundProducts.clear();
 
-    if (fileInfo.suffix() == "txt")
+    qDebug() << "Searched: " << ui.inputBox_SearchedItem->text();
+    QString toSearch = ui.inputBox_SearchedItem->text();
+
+    bool byName = false;
+    bool byProducer = false;
+
+    for (int i = 0; i < allProducts.size(); i++)
     {
-        QFile file(fileName);
-        if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-            return;
+        byName = allProducts[i].getName().contains(toSearch, Qt::CaseInsensitive);
+        byProducer = allProducts[i].getProducer().contains(toSearch, Qt::CaseInsensitive);
 
-        QTextStream fromFile(&file);
-
-        numOfAllProducts = fromFile.readLine().toInt();
-        qDebug() << "pocet produktov:\n" << numOfAllProducts;
-
-        int tempID = -1;
-        QString tempName = "";
-        QString tempProducer = "";
-        int tempQuantity = -1;
-        double tempPrice = -1.0;
-
-        while (!fromFile.atEnd())
-        {
-            tempID = fromFile.readLine().toInt();
-            tempName = fromFile.readLine();
-            tempProducer = fromFile.readLine();
-            tempQuantity = fromFile.readLine().toInt();
-            tempPrice = fromFile.readLine().toDouble();
-
-            allProducts.push_back(Product(tempID, tempName, tempProducer, tempQuantity, tempPrice));
-
-        }
-
-        if (!allProducts.isEmpty())
-        {
-            qDebug() << "products loaded";
-            ui.button_CustomerRegistration->setEnabled(true);
-        }
-
-        for (int i = 0; i < numOfAllProducts; i++)
-        {
-            qDebug() << allProducts[i].getID() << allProducts[i].getName() << allProducts[i].getProducer() << allProducts[i].getQuantity() << allProducts[i].getPrice() << " EUR";
-        }
-
-        ui.tableWidget->setRowCount(allProducts.size());
-
-        for (int i = 0; i < allProducts.size(); i++)
-        {
-            QTableWidgetItem* ID = new QTableWidgetItem();
-            QTableWidgetItem* name = new QTableWidgetItem();
-            QTableWidgetItem* producer = new QTableWidgetItem();
-            QTableWidgetItem* quantity = new QTableWidgetItem();
-            QTableWidgetItem* price = new QTableWidgetItem();
-
-            ID->setText(QString("%1").arg(allProducts[i].getID()));
-            name->setText(allProducts[i].getName());
-            producer->setText(allProducts[i].getProducer());
-            quantity->setText(QString("%1").arg(allProducts[i].getQuantity()));
-            price->setText(QString("%1 EUR").arg(allProducts[i].getPrice()));
-
-            ui.tableWidget->setItem(i, 0, ID);
-            ui.tableWidget->setItem(i, 1, name);
-            ui.tableWidget->setItem(i, 2, producer);
-            ui.tableWidget->setItem(i, 3, quantity);
-            ui.tableWidget->setItem(i, 4, price);
-        }
-        
+        if (byName || byProducer)
+            foundProducts.push_back(allProducts[i]);
     }
+
+    showProducts(foundProducts);
 }
 
 void eShopGUI::on_button_CustomerRegistration_clicked()
@@ -200,10 +161,10 @@ void eShopGUI::on_button_Register_clicked()
         ui.groupBox_Main->setEnabled(true);
         ui.groupBox_ShowProducts->setEnabled(true);
         ui.groupBox_RegistrationWindow->setVisible(false);
+        ui.groupBox_Buttom->setEnabled(true);
         ui.button_CustomerRegistration->setVisible(false);
         ui.button_FinnishOrder->setVisible(true);
         ui.inputBox_SearchedItem->setEnabled(true);
-        ui.button_Search->setEnabled(true);
         
         // zobrazenie zadaneho mena a priezviska
         ui.label_CustomerInfo->setVisible(true);
@@ -223,9 +184,8 @@ void eShopGUI::on_button_FinnishOrder_clicked()
     ui.label_EUR->setVisible(false);
     ui.button_FinnishOrder->setVisible(false);
     ui.inputBox_SearchedItem->setEnabled(false);
-    ui.button_Search->setEnabled(false);
     ui.button_CustomerRegistration->setVisible(true);
-    ui.tableWidget->clear();
+    ui.tableWidget_Catalog->clear();
 
     msgBox.setWindowTitle(" ");
     msgBox.setText("Shopping done");

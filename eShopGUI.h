@@ -25,7 +25,7 @@ private:
 
     QMessageBox msgBox;
 
-    void importProducts();
+    bool importProducts();
     void showProducts(QVector<Product>& products);
     void print(QVector<Product>& products);
 

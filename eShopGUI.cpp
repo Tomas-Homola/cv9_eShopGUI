@@ -1,13 +1,13 @@
 #include "eShopGUI.h"
 
-void eShopGUI::importProducts()
+bool eShopGUI::importProducts()
 {
     if (!productsLoaded)
     {
         QString fileName = QFileDialog::getOpenFileName(this, "Open File", "", tr("Txt File (*.txt);;All files (*.)"));
 
         if (fileName.isEmpty())
-            return;
+            return false;
 
         qDebug() << fileName;
 
@@ -18,9 +18,18 @@ void eShopGUI::importProducts()
         {
             QFile file(fileName);
             if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
-                return;
+                return false;
 
             QTextStream fromFile(&file);
+
+            if (fromFile.readLine() != "ProductList")
+            {
+                msgBox.setWindowTitle("Warning");
+                msgBox.setText("Incorect txt file");
+                msgBox.exec();
+                
+                return false;
+            }
 
             int tempID = -1;
             QString tempName = "";
@@ -44,9 +53,8 @@ void eShopGUI::importProducts()
             {
                 qDebug() << "products loaded";
                 productsLoaded = true;
+                return true;
             }
-
-            qDebug() << "Num of products:" << allProducts.size();
         }
     }
     else
@@ -54,6 +62,7 @@ void eShopGUI::importProducts()
         msgBox.setWindowTitle("Info message");
         msgBox.setText("Products already imported");
         msgBox.exec();
+        return false;
     }
 }
 
@@ -122,11 +131,12 @@ eShopGUI::eShopGUI(QWidget *parent)
 
 void eShopGUI::on_action_ImportProducts_triggered()
 {
-    importProducts();
+    if (importProducts())
+    {
+        ui.button_CustomerRegistration->setEnabled(true);
 
-    ui.button_CustomerRegistration->setEnabled(true);
-
-    showProducts(allProducts);
+        showProducts(allProducts);
+    }
 }
 
 void eShopGUI::on_inputBox_SearchedItem_textChanged() // vyhladavanie
@@ -217,7 +227,7 @@ void eShopGUI::on_button_FinnishOrder_clicked()
     char* date = ctime(&now);
     qDebug() << "Current time:" << date;
 
-    out << "E-Shop Tomas\nUlica, Mesto, Krajina\nDatum a cas nakupu: " << date << "******************************\nBought products:\n";
+    out << "E-Shop Tomas\nDate and time: " << date << "******************************\nBought products:\n";
 
     for (int i = 0; i < customer.getNumOfChosenProducts(); i++)
     {

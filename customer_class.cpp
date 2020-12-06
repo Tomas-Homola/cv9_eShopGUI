@@ -14,6 +14,6 @@ Customer::Customer(QString name, QString surname, double budget)
 
 void Customer::buyProduct(int ID)
 {
-	boughtProducts.push_back(ID);
+	chosenProducts.push_back(ID);
 }
 

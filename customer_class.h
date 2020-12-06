@@ -9,8 +9,7 @@ private:
 	QString name = "";
 	QString surname = "";
 	double budget = -1.0;
-	QVector<int> boughtProducts;
-	int productCount = -1;
+	QVector<int> chosenProducts;
 
 public:
 	Customer();
@@ -19,6 +18,8 @@ public:
 	QString getName() { return name; } // funkcia na vratenie mena
 	QString getSurname() { return surname; } // funkcia na vratenie priezviska
 	double getBudget() { return budget; } // funkcia na vratenie rozpoctu
+	int getNumOfChosenProducts() { return chosenProducts.size(); }
+	int getChosenProductID(int i) { return chosenProducts[i]; }
 
 	void setName(QString newName) { name = newName; } // zmena mena
 	void setSurname(QString newSurname) { surname = newSurname; } // zmena priezviska
